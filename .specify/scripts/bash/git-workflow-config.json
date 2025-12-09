@@ -1,0 +1,58 @@
+{
+  "repository": {
+    "url": "https://github.com/FBCD1012/agent_repo.git",
+    "remote": "origin",
+    "mainBranch": "main",
+    "developBranch": "develop"
+  },
+  "branching": {
+    "featurePrefix": "",
+    "fixPrefix": "fix/",
+    "refactorPrefix": "refactor/",
+    "hotfixPrefix": "hotfix/",
+    "backupPrefix": "backup/",
+    "autoDeleteMerged": true
+  },
+  "commits": {
+    "autoStageAll": true,
+    "requireMessage": true,
+    "messageTemplate": "[类型]([范围]): [描述]",
+    "types": ["feat", "fix", "refactor", "docs", "style", "test", "chore"]
+  },
+  "pr": {
+    "autoCreate": true,
+    "autoMerge": false,
+    "requireReview": true,
+    "requireCI": true,
+    "deleteBranchAfterMerge": true,
+    "template": {
+      "title": "[类型] [编号]-[功能名]: [简短描述]",
+      "body": "## 功能概述\n\n## 变更列表\n\n## 测试说明\n\n## 相关 Issue"
+    }
+  },
+  "sync": {
+    "autoPull": true,
+    "autoPush": true,
+    "pullInterval": 3600,
+    "conflictStrategy": "rebase",
+    "maxRetries": 3
+  },
+  "backup": {
+    "enabled": true,
+    "beforeImportantOps": true,
+    "retentionDays": 30,
+    "maxBackups": 10
+  },
+  "security": {
+    "protectedBranches": ["main", "develop"],
+    "allowForcePush": false,
+    "requireToken": true
+  },
+  "logging": {
+    "enabled": true,
+    "logDir": ".git/workflow-logs",
+    "retentionDays": 90,
+    "verbose": false
+  }
+}
+

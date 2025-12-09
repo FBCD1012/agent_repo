@@ -1,0 +1,146 @@
+# Cursor AI 自动执行规则
+
+## 🔥 核心原则：完全自动化执行
+
+**所有命令必须自动执行，包括处理交互式提示！不允许等待用户输入！**
+
+## 命令执行策略
+
+### 自动执行的命令类型
+
+以下类型的命令应该**自动执行**，不需要询问：
+
+1. **文件操作**:
+   - `mkdir` - 创建目录
+   - `touch` - 创建文件
+   - `cp` - 复制文件
+   - `mv` - 移动/重命名文件
+   - `rm` - 删除文件（仅限明确请求时）
+   - `cat`, `head`, `tail` - 读取文件
+
+2. **Git操作**:
+   - `git status`, `git log`, `git diff` - 查看信息
+   - `git add` - 添加文件到暂存区
+   - `git commit -m "message"` - 提交更改（必须使用 -m，避免编辑器）
+   - `git checkout` - 切换分支
+   - `git branch` - 创建/列出分支
+
+3. **包管理**:
+   - `npm install`, `yarn add`, `pip install` - 安装依赖
+   - `npm run`, `yarn run` - 运行脚本
+   - `npm create vite` - 创建项目（必须处理交互）
+
+4. **构建和测试**:
+   - `npm test`, `pytest`, `cargo test` - 运行测试
+   - `npm run build`, `make` - 构建项目
+
+5. **项目初始化**:
+   - 创建项目结构
+   - 初始化配置文件
+   - 设置开发环境
+
+### 需要询问的命令
+
+以下命令**必须询问**用户确认：
+
+1. **破坏性操作**:
+   - `rm -rf` - 递归删除目录
+   - `git reset --hard` - 硬重置
+   - `git push --force` - 强制推送
+   - 任何可能丢失数据的操作
+
+2. **系统级操作**:
+   - `sudo` 命令
+   - 修改系统配置
+   - 安装系统级软件
+
+## 🔥 交互式命令自动处理规则（关键）
+
+### npm create vite 命令
+
+**必须**使用以下方式之一自动处理交互：
+
+```bash
+# 方法1（推荐）: 明确指定所有参数
+npm create vite@latest quantitative-platform -- --template react-ts
+
+# 方法2: 使用 echo 管道自动回答 "Use rolldown-vite?" 为 No
+echo "n" | npm create vite@latest quantitative-platform -- --template react-ts
+
+# 方法3: 设置 CI 环境变量（如果支持）
+CI=true npm create vite@latest quantitative-platform -- --template react-ts
+```
+
+**禁止**: 执行命令后等待用户回答交互式提示！
+
+### 通用交互式命令处理
+
+1. **自动选择默认/安全选项**: 
+   - Yes/No 提示 → 默认选择 No 或更安全的选项
+   - 选项列表 → 选择第一个或默认选项
+
+2. **使用管道输入**:
+   ```bash
+   echo "answer" | command
+   printf "answer\n" | command
+   yes "n" | command  # 如果支持
+   ```
+
+3. **使用环境变量**:
+   ```bash
+   CI=true command
+   DEBIAN_FRONTEND=noninteractive command
+   ```
+
+4. **使用非交互式标志**:
+   - `--yes`, `-y`, `--no-interaction`, `--force`
+   - `--template` (npm create)
+   - `-m "message"` (git commit)
+
+### 常见命令的非交互式处理
+
+| 命令 | 非交互式方法 |
+|------|------------|
+| `npm create vite` | `echo "n" \| npm create vite@latest ... -- --template react-ts` |
+| `git commit` | `git commit -m "message"` (必须使用 -m) |
+| `npm install` | `npm install --yes` 或直接 `npm install` |
+| `apt install` | `apt install -y package` |
+| 交互式安装程序 | `DEBIAN_FRONTEND=noninteractive command` |
+
+### 执行原则
+
+1. **默认自动执行**: 安全命令直接执行
+2. **自动处理交互**: 所有交互式提示必须自动回答
+3. **使用非交互式标志**: 优先使用命令的非交互式选项
+4. **使用管道**: 如果必须交互，使用 echo/printf 管道输入
+5. **错误处理**: 如果命令失败，报告错误并建议替代方案
+6. **进度报告**: 执行重要操作时报告进度和结果
+
+### 如果命令必须交互且无法绕过
+
+1. 先尝试查找替代的非交互式命令或工具
+2. 如果找不到，报告错误并建议手动执行
+3. **绝不**让命令挂起等待用户输入
+4. 如果必须等待，明确说明原因并建议用户手动执行
+
+## 项目特定规则
+
+根据本项目规范（`.specify/` 目录下的规则），AI应该：
+
+1. **自动执行项目创建流程**: 当用户要求创建项目时，自动执行所有必要的命令
+2. **自动创建文件结构**: 根据 `spec.md` 和 `plan.md` 自动创建目录和文件
+3. **自动运行脚本**: 执行 `.specify/scripts/bash/` 下的脚本时，使用 `--json` 或非交互式标志
+4. **自动更新配置**: 更新 agent context 文件时，直接执行，无需确认
+5. **自动处理所有交互**: 包括 npm create、git commit 等所有交互式命令
+
+## 工作流命令自动执行
+
+以下工作流命令应该自动执行：
+
+- `/speckit.specify` - 创建规范
+- `/speckit.plan` - 创建计划
+- `/speckit.tasks` - 生成任务
+- `/speckit.implement` - 执行实施
+
+所有相关文件操作和命令执行都应该自动进行，包括处理所有交互式提示。
+
