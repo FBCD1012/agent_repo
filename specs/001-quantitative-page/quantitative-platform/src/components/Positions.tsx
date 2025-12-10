@@ -10,7 +10,7 @@ import {
   Typography,
   Chip,
   Box,
-  TableSortLabel
+  TableSortLabel,
 } from '@mui/material';
 import type { Position } from '../types';
 
@@ -28,7 +28,7 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
   const formatNumber = (value: number, decimals: number = 2): string => {
     return value.toLocaleString('en-US', {
       minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
+      maximumFractionDigits: decimals,
     });
   };
 
@@ -37,18 +37,18 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 1) return '今天';
     if (diffDays === 2) return '昨天';
     if (diffDays <= 7) return `${diffDays}天前`;
-    
+
     return date.toLocaleDateString('zh-CN');
   };
 
   const sortedPositions = useMemo(() => {
     const sorted = [...positions].sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortKey) {
         case 'symbol':
           comparison = a.symbol.localeCompare(b.symbol);
@@ -60,10 +60,10 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
           comparison = a.entryTime - b.entryTime;
           break;
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison;
     });
-    
+
     return sorted;
   }, [positions, sortKey, sortOrder]);
 
@@ -93,21 +93,21 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
       <Typography variant="h6" gutterBottom fontWeight="bold">
         持仓信息 ({positions.length})
       </Typography>
-      <TableContainer 
-        component={Paper} 
-        sx={{ 
+      <TableContainer
+        component={Paper}
+        sx={{
           flex: 1,
           overflow: 'auto',
           '& .MuiTableCell-root': {
             py: 1,
-            px: 1
-          }
+            px: 1,
+          },
         }}
       >
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              <TableCell 
+              <TableCell
                 sortDirection={sortKey === 'symbol' ? sortOrder : false}
                 sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}
               >
@@ -131,7 +131,7 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
               <TableCell align="right" sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}>
                 盈亏金额
               </TableCell>
-              <TableCell 
+              <TableCell
                 sortDirection={sortKey === 'pnlPercent' ? sortOrder : false}
                 sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}
               >
@@ -143,7 +143,7 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
                   盈亏比例
                 </TableSortLabel>
               </TableCell>
-              <TableCell 
+              <TableCell
                 sortDirection={sortKey === 'entryTime' ? sortOrder : false}
                 sx={{ fontWeight: 'bold', backgroundColor: 'grey.50' }}
               >
@@ -161,12 +161,12 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
             {sortedPositions.map((position) => {
               const isPositive = position.pnlPercent >= 0;
               return (
-                <TableRow 
+                <TableRow
                   key={position.symbol}
                   sx={{
                     '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
+                      backgroundColor: 'action.hover',
+                    },
                   }}
                 >
                   <TableCell component="th" scope="row">
@@ -194,9 +194,9 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
                       label={`${isPositive ? '+' : ''}$${formatNumber(position.pnlAmount)}`}
                       color={isPositive ? 'success' : 'error'}
                       size="small"
-                      sx={{ 
+                      sx={{
                         fontWeight: 'bold',
-                        fontSize: '0.75rem'
+                        fontSize: '0.75rem',
                       }}
                     />
                   </TableCell>
@@ -205,9 +205,9 @@ const Positions: React.FC<PositionsProps> = ({ positions }) => {
                       label={`${isPositive ? '+' : ''}${formatNumber(position.pnlPercent)}%`}
                       color={isPositive ? 'success' : 'error'}
                       size="small"
-                      sx={{ 
+                      sx={{
                         fontWeight: 'bold',
-                        fontSize: '0.75rem'
+                        fontSize: '0.75rem',
                       }}
                     />
                   </TableCell>

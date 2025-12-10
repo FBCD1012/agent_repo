@@ -1,60 +1,87 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
 import type { MarketData } from '../types';
 
 interface MarketDataCardProps {
-  data: MarketData;
+  readonly data: MarketData;
+  readonly onClick?: (symbol: string) => void;
 }
 
-const MarketDataCard: React.FC<MarketDataCardProps> = ({ data }) => {
-  const isPositive = data.change24hPercent >= 0;
-  
-  const formatPrice = (price: number): string => {
-    return price.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
+const MarketDataCard: React.FC<MarketDataCardProps> = ({ data, onClick }) => {
+  const cardData = useMemo(() => {
+    const isPositive = data.change24hPercent >= 0;
 
-  const formatVolume = (volume: number): string => {
-    if (volume >= 1000000000) {
-      return `$${(volume / 1000000000).toFixed(2)}B`;
-    }
-    return `$${(volume / 1000000).toFixed(2)}M`;
-  };
+    const formatPrice = (price: number): string => {
+      return price.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    };
+
+    const formatVolume = (volume: number): string => {
+      if (volume >= 1000000000) {
+        return `$${(volume / 1000000000).toFixed(2)}B`;
+      }
+      if (volume >= 1000000) {
+        return `$${(volume / 1000000).toFixed(2)}M`;
+      }
+      if (volume >= 1000) {
+        return `$${(volume / 1000).toFixed(2)}K`;
+      }
+      return `$${volume.toFixed(2)}`;
+    };
+
+    const changeLabel = `${isPositive ? '+' : ''}${data.change24hPercent.toFixed(2)}%`;
+    const changeAmountLabel = `${isPositive ? '+' : ''}$${formatPrice(data.change24h)}`;
+    const volumeLabel = `Vol: ${formatVolume(data.volume24h)}`;
+
+    return {
+      isPositive,
+      priceLabel: `$${formatPrice(data.price)}`,
+      changeLabel,
+      changeAmountLabel,
+      volumeLabel,
+    };
+  }, [data]);
+
+  const handleClick = useMemo(() => {
+    if (!onClick) return undefined;
+    return () => onClick(data.symbol);
+  }, [onClick, data.symbol]);
 
   return (
-    <Card 
-      sx={{ 
-        minWidth: 275, 
-        m: 1,
+    <Card
+      sx={{
+        minWidth: 275,
+        cursor: onClick ? 'pointer' : 'default',
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-        '&:hover': {
+        '&:hover': onClick ? {
           transform: 'translateY(-2px)',
-          boxShadow: 4
-        }
+          boxShadow: 4,
+        } : undefined,
       }}
+      onClick={handleClick}
     >
       <CardContent>
         <Typography variant="h6" component="div" gutterBottom fontWeight="bold">
           {data.symbol}
         </Typography>
         <Typography variant="h4" component="div" color="primary" fontWeight="bold">
-          ${formatPrice(data.price)}
+          {cardData.priceLabel}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
           <Chip
-            label={`${isPositive ? '+' : ''}${data.change24hPercent.toFixed(2)}%`}
-            color={isPositive ? 'success' : 'error'}
+            label={cardData.changeLabel}
+            color={cardData.isPositive ? 'success' : 'error'}
             size="small"
             sx={{ mr: 1, fontWeight: 'bold' }}
           />
           <Typography variant="body2" color="text.secondary">
-            {isPositive ? '+' : ''}${formatPrice(data.change24h)} (24h)
+            {cardData.changeAmountLabel} (24h)
           </Typography>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Vol: {formatVolume(data.volume24h)}
+          {cardData.volumeLabel}
         </Typography>
       </CardContent>
     </Card>

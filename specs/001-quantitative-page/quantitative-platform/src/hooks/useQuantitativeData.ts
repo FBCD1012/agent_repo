@@ -1,64 +1,124 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { MarketData, Position, CandleData, Timeframe } from '../types';
 import { dataService } from '../services/dataService';
 
 interface UseQuantitativeDataReturn {
-  marketData: MarketData[];
-  positions: Position[];
-  candleData: CandleData[];
-  selectedSymbol: string;
-  selectedTimeframe: Timeframe;
-  loading: boolean;
-  error: string | null;
+  readonly marketData: MarketData[];
+  readonly positions: Position[];
+  readonly candleData: CandleData[];
+  readonly selectedSymbol: string;
+  readonly selectedTimeframe: Timeframe;
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly lastUpdated: number | null;
   setSelectedSymbol: (symbol: string) => void;
   setSelectedTimeframe: (timeframe: Timeframe) => void;
   refreshData: () => void;
 }
 
+const DEFAULT_SYMBOL = 'BTC/USDT';
+const DEFAULT_TIMEFRAME: Timeframe = '1h';
+const REFRESH_INTERVAL = 3000;
+
 export const useQuantitativeData = (): UseQuantitativeDataReturn => {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [candleData, setCandleData] = useState<CandleData[]>([]);
-  const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC/USDT');
-  const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('1h');
+  const [selectedSymbol, setSelectedSymbol] = useState<string>(DEFAULT_SYMBOL);
+  const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
-  const updateData = useCallback(async () => {
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const updateData = useCallback(async (signal?: AbortSignal) => {
+    if (signal?.aborted) return;
+
     try {
       setError(null);
+
       const [newMarketData, newPositions, newCandleData] = await Promise.all([
-        Promise.resolve(dataService.getMarketData()),
-        Promise.resolve(dataService.getPositions()),
-        Promise.resolve(dataService.getCandleData(selectedSymbol, selectedTimeframe))
+        dataService.getMarketData(),
+        dataService.getPositions(),
+        dataService.getCandleData(selectedSymbol, selectedTimeframe),
       ]);
+
+      if (signal?.aborted) return;
 
       setMarketData(newMarketData);
       setPositions(newPositions);
       setCandleData(newCandleData);
+      setLastUpdated(Date.now());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      if (signal?.aborted) return;
+
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
+      setError(errorMessage);
       console.error('Data update error:', err);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   }, [selectedSymbol, selectedTimeframe]);
 
   const refreshData = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
     setLoading(true);
-    updateData();
+
+    updateData(abortControllerRef.current.signal).finally(() => {
+      abortControllerRef.current = null;
+    });
   }, [updateData]);
 
   useEffect(() => {
-    updateData();
-  }, [updateData]);
+    refreshData();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [refreshData]);
 
   useEffect(() => {
-    const interval = setInterval(updateData, 3000);
-    return () => clearInterval(interval);
-  }, [updateData]);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
-  const memoizedReturn = useMemo(() => ({
+    timeoutRef.current = setTimeout(() => {
+      refreshData();
+    }, REFRESH_INTERVAL);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [refreshData]);
+
+  const handleSymbolSelect = useCallback((symbol: string) => {
+    if (symbol !== selectedSymbol) {
+      setSelectedSymbol(symbol);
+    }
+  }, [selectedSymbol]);
+
+  const handleTimeframeSelect = useCallback((timeframe: Timeframe) => {
+    if (timeframe !== selectedTimeframe) {
+      setSelectedTimeframe(timeframe);
+    }
+  }, [selectedTimeframe]);
+
+  return useMemo(() => ({
     marketData,
     positions,
     candleData,
@@ -66,9 +126,10 @@ export const useQuantitativeData = (): UseQuantitativeDataReturn => {
     selectedTimeframe,
     loading,
     error,
-    setSelectedSymbol,
-    setSelectedTimeframe,
-    refreshData
+    lastUpdated,
+    setSelectedSymbol: handleSymbolSelect,
+    setSelectedTimeframe: handleTimeframeSelect,
+    refreshData,
   }), [
     marketData,
     positions,
@@ -77,10 +138,9 @@ export const useQuantitativeData = (): UseQuantitativeDataReturn => {
     selectedTimeframe,
     loading,
     error,
-    setSelectedSymbol,
-    setSelectedTimeframe,
-    refreshData
+    lastUpdated,
+    handleSymbolSelect,
+    handleTimeframeSelect,
+    refreshData,
   ]);
-
-  return memoizedReturn;
 };

@@ -11,11 +11,11 @@ interface CandleChartProps {
   loading?: boolean;
 }
 
-const CandleChart: React.FC<CandleChartProps> = ({ 
-  data, 
-  symbol = 'BTC/USDT', 
+const CandleChart: React.FC<CandleChartProps> = ({
+  data,
+  symbol = 'BTC/USDT',
   timeframe,
-  onTimeframeChange
+  onTimeframeChange,
 }) => {
 
   const chartOption = useMemo(() => {
@@ -24,7 +24,7 @@ const CandleChart: React.FC<CandleChartProps> = ({
       item.open,
       item.close,
       item.low,
-      item.high
+      item.high,
     ]);
 
     return {
@@ -33,13 +33,13 @@ const CandleChart: React.FC<CandleChartProps> = ({
         left: 'center',
         textStyle: {
           fontSize: 16,
-          fontWeight: 'bold'
-        }
+          fontWeight: 'bold',
+        },
       },
       tooltip: {
         trigger: 'axis',
         axisPointer: {
-          type: 'cross'
+          type: 'cross',
         },
         formatter: (params: Array<{ data: number[] }>) => {
           const item = params[0].data;
@@ -53,12 +53,12 @@ const CandleChart: React.FC<CandleChartProps> = ({
               <span style="color: #666;">最高: </span><span style="color: #26a69a;">$${item[4].toFixed(2)}</span>
             </div>
           `;
-        }
+        },
       },
       grid: {
         left: '10%',
         right: '10%',
-        bottom: '15%'
+        bottom: '15%',
       },
       xAxis: {
         type: 'time',
@@ -67,27 +67,27 @@ const CandleChart: React.FC<CandleChartProps> = ({
           formatter: (value: number) => {
             const date = new Date(value);
             return date.toLocaleTimeString();
-          }
-        }
+          },
+        },
       },
       yAxis: {
         type: 'value',
         scale: true,
-        splitLine: { 
+        splitLine: {
           show: true,
           lineStyle: {
-            color: '#f0f0f0'
-          }
+            color: '#f0f0f0',
+          },
         },
         axisLabel: {
-          formatter: (value: number) => `$${value.toFixed(0)}`
-        }
+          formatter: (value: number) => `$${value.toFixed(0)}`,
+        },
       },
       dataZoom: [
         {
           type: 'inside',
           start: 70,
-          end: 100
+          end: 100,
         },
         {
           show: true,
@@ -96,8 +96,8 @@ const CandleChart: React.FC<CandleChartProps> = ({
           start: 70,
           end: 100,
           height: 20,
-          borderColor: '#ccc'
-        }
+          borderColor: '#ccc',
+        },
       ],
       series: [
         {
@@ -108,10 +108,10 @@ const CandleChart: React.FC<CandleChartProps> = ({
             color: '#26a69a',
             color0: '#ef5350',
             borderColor: '#26a69a',
-            borderColor0: '#ef5350'
-          }
-        }
-      ]
+            borderColor0: '#ef5350',
+          },
+        },
+      ],
     };
   }, [data, symbol, timeframe]);
 
@@ -124,9 +124,9 @@ const CandleChart: React.FC<CandleChartProps> = ({
               key={tf}
               onClick={() => onTimeframeChange(tf)}
               variant={timeframe === tf ? 'contained' : 'outlined'}
-              sx={{ 
+              sx={{
                 minWidth: 40,
-                fontSize: '0.75rem'
+                fontSize: '0.75rem',
               }}
             >
               {tf.toUpperCase()}
