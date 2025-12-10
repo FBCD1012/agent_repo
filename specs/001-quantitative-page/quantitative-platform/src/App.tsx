@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -16,10 +16,12 @@ import {
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SettingsIcon from '@mui/icons-material/Settings';
+import SchoolIcon from '@mui/icons-material/School';
 import MarketDataCard from './components/MarketDataCard';
 import CandleChart from './components/CandleChart';
 import Positions from './components/Positions';
 import LoadingState from './components/LoadingState';
+import IndicatorDocs from './components/IndicatorDocs';
 import { useQuantitativeData } from './hooks/useQuantitativeData';
 
 const theme = createTheme({
@@ -58,26 +60,49 @@ const theme = createTheme({
 interface AppHeaderProps {
   readonly loading: boolean;
   readonly refreshData: () => void;
+  readonly showIndicatorDocs: boolean;
+  readonly onToggleIndicatorDocs: () => void;
 }
 
-const AppHeader: React.FC<AppHeaderProps> = memo(({ loading, refreshData }) => {
+const AppHeader: React.FC<AppHeaderProps> = memo(({
+  loading,
+  refreshData,
+  showIndicatorDocs,
+  onToggleIndicatorDocs,
+}) => {
   return (
     <Toolbar>
       <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-        量化交易平台
+        {showIndicatorDocs ? '技术指标科普' : '量化交易平台'}
       </Typography>
-      <Tooltip title="刷新数据">
-        <IconButton color="inherit" onClick={refreshData} disabled={loading}>
-          <Badge badgeContent={0} color="error">
+      {!showIndicatorDocs && (
+        <>
+          <Tooltip title="指标科普">
+            <IconButton color="inherit" onClick={onToggleIndicatorDocs}>
+              <SchoolIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="刷新数据">
+            <IconButton color="inherit" onClick={refreshData} disabled={loading}>
+              <Badge badgeContent={0} color="error">
+                <RefreshIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="设置">
+            <IconButton color="inherit">
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+        </>
+      )}
+      {showIndicatorDocs && (
+        <Tooltip title="返回主页面">
+          <IconButton color="inherit" onClick={onToggleIndicatorDocs}>
             <RefreshIcon />
-          </Badge>
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="设置">
-        <IconButton color="inherit">
-          <SettingsIcon />
-        </IconButton>
-      </Tooltip>
+          </IconButton>
+        </Tooltip>
+      )}
     </Toolbar>
   );
 });
@@ -179,15 +204,29 @@ MainContent.displayName = 'MainContent';
 
 const App: React.FC = memo(() => {
   const { loading, refreshData } = useQuantitativeData();
+  const [showIndicatorDocs, setShowIndicatorDocs] = useState<boolean>(false);
+
+  const handleToggleIndicatorDocs = useCallback(() => {
+    setShowIndicatorDocs(prev => !prev);
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default }}>
         <AppBar position="static" elevation={1}>
-          <AppHeader loading={loading} refreshData={refreshData} />
+          <AppHeader
+            loading={loading}
+            refreshData={refreshData}
+            showIndicatorDocs={showIndicatorDocs}
+            onToggleIndicatorDocs={handleToggleIndicatorDocs}
+          />
         </AppBar>
-        <MainContent />
+        {showIndicatorDocs ? (
+          <IndicatorDocs onBack={handleToggleIndicatorDocs} />
+        ) : (
+          <MainContent />
+        )}
       </Box>
     </ThemeProvider>
   );

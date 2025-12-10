@@ -46,6 +46,7 @@ export type UserAction =
   | 'VIEW_MARKET_DATA'
   | 'VIEW_CANDLE_CHART'
   | 'VIEW_POSITIONS'
+  | 'VIEW_INDICATOR_DOCS'
   | 'CHANGE_SYMBOL'
   | 'CHANGE_TIMEFRAME'
   | 'REFRESH_DATA';
@@ -90,6 +91,26 @@ export interface LoadingState {
 // Sorting and filtering utilities
 export type SortOrder = 'asc' | 'desc';
 export type SortKey = 'symbol' | 'pnlPercent' | 'entryTime' | 'price' | 'volume';
+
+// Indicator documentation types
+export type IndicatorCategory =
+  | 'trend'      // 趋势/均线类
+  | 'momentum'   // 动量类
+  | 'volume'     // 成交类
+  | 'volatility' // 波动/风险类
+  | 'pattern';  // 形态/跟踪类
+
+export interface IndicatorDoc {
+  readonly id: string;
+  readonly name: string;
+  readonly category: IndicatorCategory;
+  readonly definition: string;
+  readonly formula: string;
+  readonly usage: string[];
+  readonly riskWarning: string;
+  readonly example: string;
+  readonly tags: string[];
+}
 
 export interface SortConfig {
   readonly key: SortKey;
