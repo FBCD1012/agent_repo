@@ -27,6 +27,12 @@ const CandleChart: React.FC<CandleChartProps> = ({
       item.high,
     ]);
 
+    const volumeData = data.map(item => [
+      item.timestamp,
+      item.volume,
+      item.close >= item.open ? 1 : -1,
+    ]);
+
     return {
       title: {
         text: `${symbol} - ${timeframe.toUpperCase()}`,
@@ -41,58 +47,109 @@ const CandleChart: React.FC<CandleChartProps> = ({
         axisPointer: {
           type: 'cross',
         },
-        formatter: (params: Array<{ data: number[] }>) => {
-          const item = params[0].data;
+        formatter: (params: Array<{ data: number[]; seriesName: string }>) => {
+          const klineItem = params.find(p => p.seriesName === 'K-line');
+          const volumeItem = params.find(p => p.seriesName === 'Volume');
+          if (!klineItem) return '';
+          const item = klineItem.data;
           const date = new Date(item[0]);
+          const volumeValue = volumeItem ? volumeItem.data[1] : 0;
+          const formatVolume = (v: number) => {
+            if (v >= 1000000) return `${(v / 1000000).toFixed(2)}M`;
+            if (v >= 1000) return `${(v / 1000).toFixed(2)}K`;
+            return v.toFixed(2);
+          };
           return `
             <div style="padding: 8px;">
               <strong style="color: #333;">${date.toLocaleString()}</strong><br/>
               <span style="color: #666;">开盘: </span><span style="color: #26a69a;">$${item[1].toFixed(2)}</span><br/>
               <span style="color: #666;">收盘: </span><span style="color: ${item[2] >= item[1] ? '#26a69a' : '#ef5350'};">$${item[2].toFixed(2)}</span><br/>
               <span style="color: #666;">最低: </span><span style="color: #ef5350;">$${item[3].toFixed(2)}</span><br/>
-              <span style="color: #666;">最高: </span><span style="color: #26a69a;">$${item[4].toFixed(2)}</span>
+              <span style="color: #666;">最高: </span><span style="color: #26a69a;">$${item[4].toFixed(2)}</span><br/>
+              <span style="color: #666;">成交量: </span><span style="color: #1976d2;">${formatVolume(volumeValue)}</span>
             </div>
           `;
         },
       },
-      grid: {
-        left: '10%',
-        right: '10%',
-        bottom: '15%',
+      axisPointer: {
+        link: [{ xAxisIndex: 'all' }],
       },
-      xAxis: {
-        type: 'time',
-        splitLine: { show: false },
-        axisLabel: {
-          formatter: (value: number) => {
-            const date = new Date(value);
-            return date.toLocaleTimeString();
+      grid: [
+        {
+          left: '10%',
+          right: '10%',
+          top: '10%',
+          height: '55%',
+        },
+        {
+          left: '10%',
+          right: '10%',
+          top: '72%',
+          height: '15%',
+        },
+      ],
+      xAxis: [
+        {
+          type: 'time',
+          splitLine: { show: false },
+          axisLabel: {
+            show: false,
           },
+          gridIndex: 0,
         },
-      },
-      yAxis: {
-        type: 'value',
-        scale: true,
-        splitLine: {
-          show: true,
-          lineStyle: {
-            color: '#f0f0f0',
+        {
+          type: 'time',
+          splitLine: { show: false },
+          axisLabel: {
+            formatter: (value: number) => {
+              const date = new Date(value);
+              return date.toLocaleTimeString();
+            },
           },
+          gridIndex: 1,
         },
-        axisLabel: {
-          formatter: (value: number) => `$${value.toFixed(0)}`,
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          scale: true,
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: '#f0f0f0',
+            },
+          },
+          axisLabel: {
+            formatter: (value: number) => `$${value.toFixed(0)}`,
+          },
+          gridIndex: 0,
         },
-      },
+        {
+          type: 'value',
+          scale: true,
+          splitLine: { show: false },
+          axisLabel: {
+            formatter: (value: number) => {
+              if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+              if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+              return value.toFixed(0);
+            },
+          },
+          gridIndex: 1,
+        },
+      ],
       dataZoom: [
         {
           type: 'inside',
+          xAxisIndex: [0, 1],
           start: 70,
           end: 100,
         },
         {
           show: true,
           type: 'slider',
-          top: '90%',
+          xAxisIndex: [0, 1],
+          top: '92%',
           start: 70,
           end: 100,
           height: 20,
@@ -104,12 +161,26 @@ const CandleChart: React.FC<CandleChartProps> = ({
           name: 'K-line',
           type: 'candlestick',
           data: klineData,
+          xAxisIndex: 0,
+          yAxisIndex: 0,
           itemStyle: {
             color: '#26a69a',
             color0: '#ef5350',
             borderColor: '#26a69a',
             borderColor0: '#ef5350',
           },
+        },
+        {
+          name: 'Volume',
+          type: 'bar',
+          data: volumeData.map(item => ({
+            value: [item[0], item[1]],
+            itemStyle: {
+              color: item[2] === 1 ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
+            },
+          })),
+          xAxisIndex: 1,
+          yAxisIndex: 1,
         },
       ],
     };

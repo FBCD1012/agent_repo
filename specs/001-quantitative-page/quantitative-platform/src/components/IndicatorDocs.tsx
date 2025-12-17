@@ -26,7 +26,8 @@ import {
   BarChart,
   Timeline,
   Timeline as TimelineIcon,
-  Info,
+  ArrowBack,
+  HelpOutline,
 } from '@mui/icons-material';
 import type { IndicatorDoc, IndicatorCategory } from '../types';
 import { indicatorDocsService } from '../services/indicatorDocsService';
@@ -79,7 +80,7 @@ const IndicatorDocs: React.FC<IndicatorDocsProps> = ({ onBack }) => {
       case 'pattern':
         return <TimelineIcon color="info" />;
       default:
-        return <Info />;
+        return <HelpOutline />;
     }
   };
 
@@ -203,7 +204,7 @@ const IndicatorDocs: React.FC<IndicatorDocsProps> = ({ onBack }) => {
         {onBack && (
           <Tooltip title="返回主页面">
             <IconButton onClick={onBack} size="large">
-              <Info />
+              <ArrowBack />
             </IconButton>
           </Tooltip>
         )}

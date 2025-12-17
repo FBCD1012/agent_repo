@@ -31,7 +31,7 @@ export const useQuantitativeData = (): UseQuantitativeDataReturn => {
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updateData = useCallback(async (signal?: AbortSignal) => {
     if (signal?.aborted) return;
@@ -56,7 +56,6 @@ export const useQuantitativeData = (): UseQuantitativeDataReturn => {
 
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
       setError(errorMessage);
-      console.error('Data update error:', err);
     } finally {
       if (!signal?.aborted) {
         setLoading(false);
@@ -77,6 +76,7 @@ export const useQuantitativeData = (): UseQuantitativeDataReturn => {
     });
   }, [updateData]);
 
+  // 初始加载和 symbol/timeframe 变化时刷新
   useEffect(() => {
     refreshData();
 
@@ -84,27 +84,29 @@ export const useQuantitativeData = (): UseQuantitativeDataReturn => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
     };
-  }, [refreshData]);
+  }, [selectedSymbol, selectedTimeframe, refreshData]);
 
+  // 定时自动刷新 - 独立的 effect
   useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      refreshData();
+    intervalRef.current = setInterval(() => {
+      if (!abortControllerRef.current) {
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        updateData(controller.signal).finally(() => {
+          if (abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+          }
+        });
+      }
     }, REFRESH_INTERVAL);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
-  }, [refreshData]);
+  }, [updateData]);
 
   const handleSymbolSelect = useCallback((symbol: string) => {
     if (symbol !== selectedSymbol) {

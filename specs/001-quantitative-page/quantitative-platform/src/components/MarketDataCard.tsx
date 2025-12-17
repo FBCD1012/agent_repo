@@ -5,9 +5,10 @@ import type { MarketData } from '../types';
 interface MarketDataCardProps {
   readonly data: MarketData;
   readonly onClick?: (symbol: string) => void;
+  readonly isSelected?: boolean;
 }
 
-const MarketDataCard: React.FC<MarketDataCardProps> = ({ data, onClick }) => {
+const MarketDataCard: React.FC<MarketDataCardProps> = ({ data, onClick, isSelected = false }) => {
   const cardData = useMemo(() => {
     const isPositive = data.change24hPercent >= 0;
 
@@ -54,7 +55,10 @@ const MarketDataCard: React.FC<MarketDataCardProps> = ({ data, onClick }) => {
       sx={{
         minWidth: 275,
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out',
+        border: isSelected ? '2px solid' : '2px solid transparent',
+        borderColor: isSelected ? 'primary.main' : 'transparent',
+        backgroundColor: isSelected ? 'action.selected' : 'background.paper',
         '&:hover': onClick ? {
           transform: 'translateY(-2px)',
           boxShadow: 4,
